@@ -9,8 +9,8 @@
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09090d;color:#fff;font-family:Arial,sans-serif;touch-action:none}
 #game{display:block;width:100vw;height:100vh;background:#17151d;image-rendering:pixelated}
-#ui{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:5;pointer-events:none;text-shadow:2px 2px 3px #000;font-weight:bold;font-size:14px;line-height:1.35}
-.panel{background:rgba(8,8,13,.78);border:1px solid #777;border-radius:9px;padding:8px 10px;min-width:220px}
+#ui{position:fixed;top:10px;left:10px;z-index:5;pointer-events:none;text-shadow:2px 2px 3px #000;font-weight:bold;font-size:14px;line-height:1.35}
+.panel{background:rgba(8,8,13,.78);border:1px solid #777;border-radius:9px;padding:8px 10px;min-width:180px}
 .hpOuter{height:13px;background:#390d12;border:1px solid #ddd;border-radius:5px;overflow:hidden;margin:4px 0 7px}
 #hpFill{height:100%;width:100%;background:linear-gradient(90deg,#e21d2b,#ff7a35)}
 #rageOuter{height:8px;background:#321015;border:1px solid #a33;border-radius:4px;overflow:hidden;margin-top:3px}
@@ -56,11 +56,11 @@ button{cursor:pointer}
 #waveInfo{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:8;font-size:40px;font-weight:bold;color:#fff;text-shadow:0 0 20px #f22;text-align:center;pointer-events:none;opacity:0;transition:opacity .3s}
 #waveInfo.show{opacity:1}
 /* Minimap */
-#minimapCanvas{position:fixed;top:15px;left:15px;z-index:7;width:150px;height:150px;border-radius:50%;border:3px solid #e22;box-shadow:0 0 15px #000;background:#111a}
+#minimapCanvas{position:fixed;top:110px;left:15px;z-index:7;width:150px;height:150px;border-radius:50%;border:3px solid #e22;box-shadow:0 0 15px #000;background:#111a}
 @media (pointer:coarse){
 #mobileControls{display:block}
-#ui{font-size:12px;top:8px;left:50%}
-.panel{min-width:180px;padding:6px 8px}
+#ui{font-size:12px;top:8px;left:8px}
+.panel{min-width:150px;padding:6px 8px}
 #task{font-size:12px;max-width:145px}
 #leaderboard{font-size:10px;padding:5px 8px;min-width:140px}
 #leaderboard .lb-row .lb-name{max-width:80px}
@@ -71,7 +71,7 @@ button{cursor:pointer}
 <canvas id="game"></canvas>
 <canvas id="minimapCanvas" width="150" height="150"></canvas>
 
-<!-- HP бар перенесен в центр сверху -->
+<!-- HP бар слева сверху, карта под ним -->
 <div id="ui">
 <div class="panel hpPanel">
 <div>❤️ HP: <span id="hpText">100</span></div>
@@ -353,7 +353,7 @@ function startWave() {
     }, i * 300);
   }
   
-  if (game.wave % 3 === 0) {
+  if (game.wave % 5 === 0) {
     setTimeout(() => {
       if (running && game.mode === 'solo') spawnBoss();
     }, 1500);
@@ -435,7 +435,7 @@ function update(dt){
       g.waveActive = false;
       g.waveTimer = 5;
       const info = $('waveInfo');
-      info.textContent = 'ВОЛНА ПРОЙДЕНА! +HP';
+      info.textContent = `ВОЛНА ${g.wave} ПРОЙДЕНА! +HP`;
       p.hp = Math.min(p.maxHp, p.hp + 30);
       info.classList.add('show');
       setTimeout(()=>info.classList.remove('show'), 2000);
