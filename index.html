@@ -1,82 +1,83 @@
 <!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#09090d">
+<title>MELSTROY: Побег от Интерпола</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09090d;color:#fff;font-family:Arial,sans-serif;touch-action:none}
+#game{display:block;width:100vw;height:100vh;background:#17151d;image-rendering:pixelated}
+#ui{position:fixed;top:10px;left:10px;z-index:5;pointer-events:none;text-shadow:2px 2px 3px #000;font-weight:bold;font-size:14px;line-height:1.35}
+.panel{background:rgba(8,8,13,.78);border:1px solid #777;border-radius:9px;padding:8px 10px;min-width:174px}
+.hpOuter{height:13px;background:#390d12;border:1px solid #ddd;border-radius:5px;overflow:hidden;margin:4px 0 7px}
+#hpFill{height:100%;width:100%;background:linear-gradient(90deg,#e21d2b,#ff7a35)}
+#rageOuter{height:8px;background:#321015;border:1px solid #a33;border-radius:4px;overflow:hidden;margin-top:3px}
+#rageFill{height:100%;width:0;background:linear-gradient(90deg,#f22,#ffb000)}
+#stats{display:none}
+.hpPanel{min-width:160px}
+#task,#pause{display:none!important}
+#task{position:fixed;right:10px;top:10px;z-index:5;background:#09090ddd;border:1px solid #aaa;border-radius:9px;padding:9px 12px;font-weight:bold}
+#pause{position:fixed;right:12px;top:78px;z-index:7;border:1px solid #aaa;background:#17151dcc;color:#fff;border-radius:10px;padding:10px 14px;font-size:20px}
+#mobileControls{display:none;position:fixed;inset:0;z-index:6;pointer-events:none}
+#joyBase{position:absolute;left:22px;bottom:24px;width:138px;height:138px;border-radius:50%;border:3px solid #ddd9;background:#ffffff20;pointer-events:auto;touch-action:none;box-shadow:0 0 18px #0008}
+#joyStick{position:absolute;left:38px;top:38px;width:56px;height:56px;border-radius:50%;background:#e32939dd;border:3px solid #fff;box-shadow:0 0 14px #e22;pointer-events:none}
+#fireButton{display:none}
+#overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:#050508eF;padding:20px;text-align:center}
+#dialog{max-width:600px;background:#15131b;border:2px solid #b33;border-radius:16px;padding:26px;box-shadow:0 0 45px #e22255aa}
+h1{color:#ff414b;margin:0 0 12px;font-size:clamp(27px,6vw,44px);text-shadow:0 0 20px #f22}
+p{color:#ddd;line-height:1.55}
+button{cursor:pointer}
+#start{border:0;border-radius:9px;background:#e22;color:#fff;padding:14px 30px;font-weight:bold;font-size:18px}
+#start:active,#pause:active{transform:scale(.97)}
+.hidden{display:none!important}
+@media (pointer:coarse){
+#mobileControls{display:block}
+#ui{font-size:12px;top:8px;left:8px}
+.panel{min-width:150px;padding:6px 8px}
+#task{font-size:12px;max-width:145px}
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="ui">
+<div class="panel hpPanel">
+<div>❤️ HP: <span id="hpText">100</span></div>
+<div class="hpOuter"><div id="hpFill"></div></div>
+</div>
+</div>
+<button id="pause" type="button" aria-label="Пауза">Ⅱ</button>
+<div id="mobileControls">
+<div id="joyBase"><div id="joyStick"></div></div>
+</div>
+<div id="overlay">
+<div id="dialog">
+<h1>MELSTROY: ПОБЕГ</h1>
+<p>Ты — Мелстрой в тазике. Интерпол наступает со всех сторон! В начале вокруг тебя вращается шляпа. Собирай такие же шляпы, чтобы увеличить их количество. Котость атакует агентов Интерпола!</p>
+<p><b>Телефон:</b> джойстик слева. На компьютере — WASD / стрелки.<br><b>Компьютер:</b> WASD / стрелки, мышь для направления атаки.</p>
+<p>Мемные звуки включаются после нажатия «Начать». Для звука нажми «Начать».</p>
+<button id="start">НАЧАТЬ ПОБЕГ</button>
+</div>
+</div>
+<script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const $=id=>document.getElementById(id);
+const mobile=matchMedia('(pointer:coarse)').matches||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+$('mobileControls').style.display=mobile?'block':'none';
+let vw=innerWidth,vh=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
+function resize(){
+vw=innerWidth;vh=innerHeight;dpr=Math.min(devicePixelRatio||1,2);
+canvas.width=Math.floor(vw*dpr);canvas.height=Math.floor(vh*dpr);
+canvas.style.width=vw+'px';canvas.style.height=vh+'px';
+ctx.setTransform(dpr,0,0,dpr,0,0)
+}
+addEventListener('resize',resize);resize();
 
-<html lang="ru">  
-<head>  
-<meta charset="utf-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">  
-<meta name="theme-color" content="#09090d">  
-<title>MELSTROY: Побег от Интерпола</title>  
-<style>  
-*{box-sizing:border-box}  
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09090d;color:#fff;font-family:Arial,sans-serif;touch-action:none}  
-#game{display:block;width:100vw;height:100vh;background:#17151d;image-rendering:pixelated}  
-#ui{position:fixed;top:10px;left:10px;z-index:5;pointer-events:none;text-shadow:2px 2px 3px #000;font-weight:bold;font-size:14px;line-height:1.35}  
-.panel{background:rgba(8,8,13,.78);border:1px solid #777;border-radius:9px;padding:8px 10px;min-width:174px}  
-.hpOuter{height:13px;background:#390d12;border:1px solid #ddd;border-radius:5px;overflow:hidden;margin:4px 0 7px}  
-#hpFill{height:100%;width:100%;background:linear-gradient(90deg,#e21d2b,#ff7a35)}  
-#rageOuter{height:8px;background:#321015;border:1px solid #a33;border-radius:4px;overflow:hidden;margin-top:3px}  
-#rageFill{height:100%;width:0;background:linear-gradient(90deg,#f22,#ffb000)}  
-#stats{display:none}  
-.hpPanel{min-width:160px}  
-#task,#pause{display:none!important}  
-#task{position:fixed;right:10px;top:10px;z-index:5;background:#09090ddd;border:1px solid #aaa;border-radius:9px;padding:9px 12px;font-weight:bold}  
-#pause{position:fixed;right:12px;top:78px;z-index:7;border:1px solid #aaa;background:#17151dcc;color:#fff;border-radius:10px;padding:10px 14px;font-size:20px}  
-#mobileControls{display:none;position:fixed;inset:0;z-index:6;pointer-events:none}  
-#joyBase{position:absolute;left:22px;bottom:24px;width:138px;height:138px;border-radius:50%;border:3px solid #ddd9;background:#ffffff20;pointer-events:auto;touch-action:none;box-shadow:0 0 18px #0008}  
-#joyStick{position:absolute;left:38px;top:38px;width:56px;height:56px;border-radius:50%;background:#e32939dd;border:3px solid #fff;box-shadow:0 0 14px #e22;pointer-events:none}  
-#fireButton{display:none}  
-#overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:#050508eF;padding:20px;text-align:center}  
-#dialog{max-width:600px;background:#15131b;border:2px solid #b33;border-radius:16px;padding:26px;box-shadow:0 0 45px #e22255aa}  
-h1{color:#ff414b;margin:0 0 12px;font-size:clamp(27px,6vw,44px);text-shadow:0 0 20px #f22}  
-p{color:#ddd;line-height:1.55}  
-button{cursor:pointer}  
-#start{border:0;border-radius:9px;background:#e22;color:#fff;padding:14px 30px;font-weight:bold;font-size:18px}  
-#start:active,#pause:active{transform:scale(.97)}  
-.hidden{display:none!important}  
-@media (pointer:coarse){  
-#mobileControls{display:block}  
-#ui{font-size:12px;top:8px;left:8px}  
-.panel{min-width:150px;padding:6px 8px}  
-#task{font-size:12px;max-width:145px}  
-}  
-</style>  
-</head>  
-<body>  
-<canvas id="game"></canvas>  
-<div id="ui">  
-<div class="panel hpPanel">  
-<div>❤️ HP: <span id="hpText">100</span></div>  
-<div class="hpOuter"><div id="hpFill"></div></div>  
-</div>  
-</div>  
-<button id="pause" type="button" aria-label="Пауза">Ⅱ</button>  
-<div id="mobileControls">  
-<div id="joyBase"><div id="joyStick"></div></div>  
-</div>  
-<div id="overlay">  
-<div id="dialog">  
-<h1>MELSTROY: ПОБЕГ</h1>  
-<p>Ты — Мелстрой в тазике. Интерпол наступает со всех сторон! В начале вокруг тебя вращается шляпа. Собирай такие же шляпы, чтобы увеличить их количество. Котость атакует агентов Интерпола!</p>  
-<p><b>Телефон:</b> джойстик слева. На компьютере — WASD / стрелки.<br><b>Компьютер:</b> WASD / стрелки, мышь для направления атаки.</p>  
-<p>Мемные звуки включаются после нажатия «Начать». Для звука нажми «Начать».</p>  
-<button id="start">НАЧАТЬ ПОБЕГ</button>  
-</div>  
-</div>  
-<script>  
-(()=>{  
-'use strict';  
-const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');  
-const $=id=>document.getElementById(id);  
-const mobile=matchMedia('(pointer:coarse)').matches||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);  
-$('mobileControls').style.display=mobile?'block':'none';  
-let vw=innerWidth,vh=innerHeight,dpr=Math.min(devicePixelRatio||1,2);  
-function resize(){  
-vw=innerWidth;vh=innerHeight;dpr=Math.min(devicePixelRatio||1,2);  
-canvas.width=Math.floor(vw*dpr);canvas.height=Math.floor(vh*dpr);  
-canvas.style.width=vw+'px';canvas.style.height=vh+'px';  
-ctx.setTransform(dpr,0,0,dpr,0,0)  
-}  
-addEventListener('resize',resize);resize();  const sprite=new Image();
+const sprite=new Image();
 sprite.src='data:image/webp;base64,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';
 
 const hatSprite=new Image();
@@ -132,7 +133,7 @@ function joyMove(e){
 if(!joy.active||e.pointerId!==joy.id)return;
 let r=jb.getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,dist=Math.hypot(dx,dy),max=43;
 if(dist>max){dx*=max/dist;dy*=max/dist}
-joy.x=dx/max;joy.y=dy/max;js.style.transform=translate(${dx}px,${dy}px)
+joy.x=dx/max;joy.y=dy/max;js.style.transform=`translate(${dx}px,${dy}px)`
 }
 jb.addEventListener('pointerdown',e=>{
 e.preventDefault();joy.active=true;joy.id=e.pointerId;jb.setPointerCapture(e.pointerId);joyMove(e)
@@ -172,12 +173,12 @@ else{memeAudio.music.play().catch(()=>{});last=0;raf=requestAnimationFrame(loop)
 function text(x,y,s,c='#fff'){game.texts.push({x,y,s,c,t:1})}
 function particles(x,y,c,n=9){
 for(let i=0;i<n;i++){
-let a=rand(0,Math.PI2),v=rand(35,180);
-game.particles.push({x,y,vx:Math.cos(a)v,vy:Math.sin(a)v,t:rand(.25,.65),c})
+let a=rand(0,Math.PI*2),v=rand(35,180);
+game.particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:rand(.25,.65),c})
 }
 }
 function spawnEnemy(){
-let p=game.p,ang=rand(0,Math.PI2),r=rand(Math.max(vw,vh).55,Math.max(vw,vh).8);
+let p=game.p,ang=rand(0,Math.PI*2),r=rand(Math.max(vw,vh)*.55,Math.max(vw,vh)*.8);
 let types=[
 {r:16,hp:3,spd:95,dmg:8,c:'#426b9a',score:1},
 {r:20,hp:7,spd:72,dmg:12,c:'#315b91',score:2},
@@ -186,8 +187,8 @@ let types=[
 let t=types[0];
 if(game.level>=3&&Math.random()<.3)t=types[1];
 if(game.level>=5&&Math.random()<.15)t=types[2];
-const scale=1+Math.floor(game.time/30).22;
-t={...t,hp:Math.ceil(t.hpscale),spd:t.spd+Math.min(35,game.time*.12)};
+const scale=1+Math.floor(game.time/30)*.22;
+t={...t,hp:Math.ceil(t.hp*scale),spd:t.spd+Math.min(35,game.time*.12)};
 game.enemies.push({...t,x:p.x+Math.cos(ang)*r,y:p.y+Math.sin(ang)*r,maxHp:t.hp,hit:0,slow:0})
 }
 const pickupTypes=['hat','hat','hat','cat','mamaBird','speed','heal','shield','xp','chekushka'];
@@ -204,8 +205,8 @@ if(keys['d']||keys['arrowright']||keys['в'])dx++;
 if(mobile){dx=joy.x;dy=joy.y}
 let l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l}
 let boostMultiplier=p.boost>0?1.5:1;
-p.x+=dxp.speeddt*(p.rageOn?1.15:1)boostMultiplier;
-p.y+=dyp.speeddt(p.rageOn?1.15:1)*boostMultiplier;
+p.x+=dx*p.speed*dt*(p.rageOn?1.15:1)*boostMultiplier;
+p.y+=dy*p.speed*dt*(p.rageOn?1.15:1)*boostMultiplier;
 p.face=Math.atan2(dy,dx);
 p.inv=Math.max(0,p.inv-dt);
 p.boost=Math.max(0,p.boost-dt);
@@ -216,12 +217,12 @@ p.rageOn=true;text(p.x,p.y-50,'Я УЖЕ КРАСНЫЙ!','#f44');
 particles(p.x,p.y,'#f22',22);memeSound('rage')
 }
 if(p.rageOn){
-p.rage=Math.min(100,p.rage+dt13);
+p.rage=Math.min(100,p.rage+dt*13);
 if(hp>.55&&p.rage>=100){p.rageOn=false;p.rage=35}
-}else p.rage=Math.max(0,p.rage-dt4);
+}else p.rage=Math.max(0,p.rage-dt*4);
 
-g.cam.x+=(p.x-g.cam.x)Math.min(1,dt7);
-g.cam.y+=(p.y-g.cam.y)Math.min(1,dt7);
+g.cam.x+=(p.x-g.cam.x)*Math.min(1,dt*7);
+g.cam.y+=(p.y-g.cam.y)*Math.min(1,dt*7);
 g.spawn-=dt;
 if(g.spawn<=0){
 g.spawn=Math.max(.24,1.25-g.level*.065);spawnEnemy();
@@ -232,14 +233,14 @@ if(g.level>4&&Math.random()<.55)spawnEnemy()
 
 for(let w of g.weapons){
 if(w.type==='hat'){
-w.a+=dt2.8;
+w.a+=dt*2.8;
 const count=Math.min(30,w.count);
-const radius=155+Math.min(65,count3);
+const radius=155+Math.min(65,count*3);
 for(let k=0;k<count;k++){
-const a=w.a+kMath.PI2/count;
-const hx=p.x+Math.cos(a)*radius,hy=p.y+Math.sin(a)radius;
+const a=w.a+k*Math.PI*2/count;
+const hx=p.x+Math.cos(a)*radius,hy=p.y+Math.sin(a)*radius;
 for(const e of g.enemies){
-if(Math.hypot(e.x-hx,e.y-hy)<e.r+24){e.hp-=dt23;e.hit=.08}
+if(Math.hypot(e.x-hx,e.y-hy)<e.r+24){e.hp-=dt*23;e.hit=.08}
 }
 }
 }
@@ -247,8 +248,8 @@ if(Math.hypot(e.x-hx,e.y-hy)<e.r+24){e.hp-=dt23;e.hit=.08}
 
 if(g.cat){
 let c=g.cat;
-c.x+=(p.x-55-c.x)Math.min(1,dt4);
-c.y+=(p.y+48-c.y)Math.min(1,dt4);
+c.x+=(p.x-55-c.x)*Math.min(1,dt*4);
+c.y+=(p.y+48-c.y)*Math.min(1,dt*4);
 c.cd-=dt;
 if(c.cd<=0){
 c.cd=Math.max(.55,2.4-(c.level-1)*.22);
@@ -259,7 +260,7 @@ if(e)shoot(c,e,2+(c.level-1)*1.5,'#ffc04a')
 
 for(let i=g.bullets.length-1;i>=0;i--){
 let b=g.bullets[i];
-b.x+=b.vxdt;b.y+=b.vydt;b.t-=dt;
+b.x+=b.vx*dt;b.y+=b.vy*dt;b.t-=dt;
 let hit=false;
 for(let e of g.enemies){
 if(Math.hypot(e.x-b.x,e.y-b.y)<e.r+b.r){
@@ -271,8 +272,8 @@ if(hit||b.t<=0)g.bullets.splice(i,1)
 
 for(let i=g.enemies.length-1;i>=0;i--){
 let e=g.enemies[i],d=dist(e,p)||1;
-e.x+=(p.x-e.x)/de.spddt*(e.slow?0.5:1);
-e.y+=(p.y-e.y)/de.spddt*(e.slow?0.5:1);
+e.x+=(p.x-e.x)/d*e.spd*dt*(e.slow?0.5:1);
+e.y+=(p.y-e.y)/d*e.spd*dt*(e.slow?0.5:1);
 e.hit=Math.max(0,e.hit-dt);e.slow=Math.max(0,e.slow-dt);
 if(d<e.r+p.r&&p.inv<=0){
 let dmg=e.dmg;
@@ -292,19 +293,19 @@ g.enemies.splice(i,1)
 }
 
 for(let i=g.pickups.length-1;i>=0;i--){
-let q=g.pickups[i];q.t-=dt;q.phase+=dt4;
+let q=g.pickups[i];q.t-=dt;q.phase+=dt*4;
 if(q.t<=0){g.pickups.splice(i,1);continue}
 if(dist(q,p)<p.r+22){collect(q);g.pickups.splice(i,1)}
 }
 for(let a of [g.particles,g.texts]){
 for(let i=a.length-1;i>=0;i--){
 let z=a[i];z.t-=dt;
-if(z.vx!==undefined){z.x+=z.vxdt;z.y+=z.vydt;z.vx=.96;z.vy*=.96}
-else z.y-=24dt;
+if(z.vx!==undefined){z.x+=z.vx*dt;z.y+=z.vy*dt;z.vx*=.96;z.vy*=.96}
+else z.y-=24*dt;
 if(z.t<=0)a.splice(i,1)
 }
 }
-g.shake=Math.max(0,g.shake-dt25);
+g.shake=Math.max(0,g.shake-dt*25);
 if(p.hp<=0){p.hp=0;running=false;gameOver()}
 updateUI()
 }
@@ -382,7 +383,7 @@ ctx.fillStyle='#3a3540';ctx.fillRect(x,top,3,bottom-top)
 }
 for(let i=-2;i<Math.ceil((right-left)/190)+2;i++)
 for(let j=-2;j<Math.ceil((bottom-top)/190)+2;j++){
-let x=Math.floor(left/190)190+i190+55,y=Math.floor(top/190)190+j190+60;
+let x=Math.floor(left/190)*190+i*190+55,y=Math.floor(top/190)*190+j*190+60;
 ctx.fillStyle='#39343c';ctx.fillRect(x,y,24,15);
 ctx.fillStyle='#4a4145';ctx.fillRect(x+4,y+3,13,8)
 }
@@ -398,9 +399,9 @@ ctx.restore()
 
 for(let w of g.weapons){
 if(w.type==='hat'){
-const count=Math.min(30,w.count),radius=155+Math.min(65,count3);
+const count=Math.min(30,w.count),radius=155+Math.min(65,count*3);
 for(let k=0;k<count;k++){
-const a=w.a+kMath.PI*2/count,x=p.x+Math.cos(a)*radius,y=p.y+Math.sin(a)*radius;
+const a=w.a+k*Math.PI*2/count,x=p.x+Math.cos(a)*radius,y=p.y+Math.sin(a)*radius;
 ctx.save();ctx.translate(x,y);ctx.rotate(a+Math.PI/2);
 ctx.shadowColor='#d58aa8';ctx.shadowBlur=15;
 if(hatSprite.complete&&hatSprite.naturalWidth)ctx.drawImage(hatSprite,-18,-21,36,42);
@@ -410,21 +411,21 @@ ctx.restore()
 }
 
 for(let i=0;i<g.birds;i++){
-let a=g.time2+iMath.PI2/Math.max(1,g.birds);
-ctx.font='19px Arial';ctx.fillText('🐦',p.x+Math.cos(a)43,p.y+Math.sin(a)43)
+let a=g.time*2+i*Math.PI*2/Math.max(1,g.birds);
+ctx.font='19px Arial';ctx.fillText('🐦',p.x+Math.cos(a)*43,p.y+Math.sin(a)*43)
 }
 for(let b of g.bullets){
 ctx.fillStyle=b.c;ctx.shadowColor=b.c;ctx.shadowBlur=12;
-ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI2);ctx.fill();ctx.shadowBlur=0
+ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0
 }
 for(let e of g.enemies){
 ctx.save();ctx.translate(e.x,e.y);
-ctx.fillStyle='#100f15';ctx.beginPath();ctx.ellipse(0,8,e.r1.05,e.r.72,0,0,Math.PI2);ctx.fill();
-ctx.fillStyle=e.hit>0?'#fff':e.c;ctx.fillRect(-e.r.65,-e.r*.3,e.r1.3,e.r1.25);
-ctx.fillStyle='#11131a';ctx.beginPath();ctx.arc(0,-e.r*.5,e.r*.58,0,Math.PI2);ctx.fill();
-ctx.fillStyle='#d6b4a4';ctx.fillRect(-e.r.22,-e.r*.52,e.r*.44,4);
-ctx.fillStyle='#9e1e2a';ctx.fillRect(-e.r,-e.r1.45,e.r2,4);
-ctx.fillStyle='#e33';ctx.fillRect(-e.r,-e.r1.45,e.r2*Math.max(0,e.hp/e.maxHp),4);
+ctx.fillStyle='#100f15';ctx.beginPath();ctx.ellipse(0,8,e.r*1.05,e.r*.72,0,0,Math.PI*2);ctx.fill();
+ctx.fillStyle=e.hit>0?'#fff':e.c;ctx.fillRect(-e.r*.65,-e.r*.3,e.r*1.3,e.r*1.25);
+ctx.fillStyle='#11131a';ctx.beginPath();ctx.arc(0,-e.r*.5,e.r*.58,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#d6b4a4';ctx.fillRect(-e.r*.22,-e.r*.52,e.r*.44,4);
+ctx.fillStyle='#9e1e2a';ctx.fillRect(-e.r,-e.r*1.45,e.r*2,4);
+ctx.fillStyle='#e33';ctx.fillRect(-e.r,-e.r*1.45,e.r*2*Math.max(0,e.hp/e.maxHp),4);
 ctx.restore()
 }
 
@@ -438,17 +439,17 @@ ctx.fillText('КОТОСТЬ LVL '+g.cat.level,g.cat.x,g.cat.y-40)
 }
 
 ctx.save();ctx.translate(p.x,p.y);
-ctx.fillStyle='#09080d99';ctx.beginPath();ctx.ellipse(0,13,27,12,0,0,Math.PI2);ctx.fill();
-let bob=Math.sin(g.time9)2;
-if(p.inv>0&&Math.floor(p.inv18)%2===0)ctx.globalAlpha=.35;
+ctx.fillStyle='#09080d99';ctx.beginPath();ctx.ellipse(0,13,27,12,0,0,Math.PI*2);ctx.fill();
+let bob=Math.sin(g.time*9)*2;
+if(p.inv>0&&Math.floor(p.inv*18)%2===0)ctx.globalAlpha=.35;
 if(sprite.complete&&sprite.naturalWidth){
 ctx.filter=p.hp/p.maxHp<.5?'saturate(3) sepia(1) hue-rotate(310deg) saturate(3)':'none';
 ctx.drawImage(sprite,-30,-43+bob,60,70);
 ctx.filter='none'
 }else{
 ctx.fillStyle=p.hp/p.maxHp<.5?'#d52b35':'#267bbd';
-ctx.beginPath();ctx.ellipse(0,5,25,15,0,0,Math.PI2);ctx.fill();
-ctx.fillStyle='#e8b18e';ctx.beginPath();ctx.arc(0,-13,14,0,Math.PI2);ctx.fill()
+ctx.beginPath();ctx.ellipse(0,5,25,15,0,0,Math.PI*2);ctx.fill();
+ctx.fillStyle='#e8b18e';ctx.beginPath();ctx.arc(0,-13,14,0,Math.PI*2);ctx.fill()
 }
 if(p.shield>0){
 ctx.globalAlpha=.8;ctx.strokeStyle='#48cfff';ctx.lineWidth=3;
@@ -472,7 +473,7 @@ ctx.restore()
 function gameOver(){
 cancelAnimationFrame(raf);stopMusic();
 $('overlay').classList.remove('hidden');
-$('dialog').innerHTML=<h1>💀 ТЕБЯ ПОЙМАЛИ</h1><p>Интерпол окружил тазик Мелстроя!</p><p>⏱️ Продержался: <b>${Math.floor(game.time)}с</b><br>💀 Агентов побеждено: <b>${game.kills}</b><br>⭐ Уровень: <b>${game.level}</b></p><button id="start">ЕЩЁ РАЗ!</button>;
+$('dialog').innerHTML=`<h1>💀 ТЕБЯ ПОЙМАЛИ</h1><p>Интерпол окружил тазик Мелстроя!</p><p>⏱️ Продержался: <b>${Math.floor(game.time)}с</b><br>💀 Агентов побеждено: <b>${game.kills}</b><br>⭐ Уровень: <b>${game.level}</b></p><button id="start">ЕЩЁ РАЗ!</button>`;
 $('start').addEventListener('click',startGame)
 }
 function loop(t){
@@ -483,6 +484,5 @@ if(running){draw();raf=requestAnimationFrame(loop)}
 }
 })();
 </script>
-
-</body>  
-</html>  
+</body>
+</html>
