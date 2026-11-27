@@ -9,14 +9,13 @@
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#09090d;color:#fff;font-family:Arial,sans-serif;touch-action:none}
 #game{display:block;width:100vw;height:100vh;background:#17151d;image-rendering:pixelated}
-#ui{position:fixed;top:10px;left:10px;z-index:5;pointer-events:none;text-shadow:2px 2px 3px #000;font-weight:bold;font-size:14px;line-height:1.35}
-.panel{background:rgba(8,8,13,.78);border:1px solid #777;border-radius:9px;padding:8px 10px;min-width:174px}
+#ui{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:5;pointer-events:none;text-shadow:2px 2px 3px #000;font-weight:bold;font-size:14px;line-height:1.35}
+.panel{background:rgba(8,8,13,.78);border:1px solid #777;border-radius:9px;padding:8px 10px;min-width:220px}
 .hpOuter{height:13px;background:#390d12;border:1px solid #ddd;border-radius:5px;overflow:hidden;margin:4px 0 7px}
 #hpFill{height:100%;width:100%;background:linear-gradient(90deg,#e21d2b,#ff7a35)}
 #rageOuter{height:8px;background:#321015;border:1px solid #a33;border-radius:4px;overflow:hidden;margin-top:3px}
 #rageFill{height:100%;width:0;background:linear-gradient(90deg,#f22,#ffb000)}
 #stats{display:none}
-.hpPanel{min-width:160px}
 #task,#pause{display:none!important}
 #task{position:fixed;right:10px;top:10px;z-index:5;background:#09090ddd;border:1px solid #aaa;border-radius:9px;padding:9px 12px;font-weight:bold}
 #pause{position:fixed;right:12px;top:78px;z-index:7;border:1px solid #aaa;background:#17151dcc;color:#fff;border-radius:10px;padding:10px 14px;font-size:20px}
@@ -60,8 +59,8 @@ button{cursor:pointer}
 #minimapCanvas{position:fixed;top:15px;left:15px;z-index:7;width:150px;height:150px;border-radius:50%;border:3px solid #e22;box-shadow:0 0 15px #000;background:#111a}
 @media (pointer:coarse){
 #mobileControls{display:block}
-#ui{font-size:12px;top:8px;left:8px}
-.panel{min-width:150px;padding:6px 8px}
+#ui{font-size:12px;top:8px;left:50%}
+.panel{min-width:180px;padding:6px 8px}
 #task{font-size:12px;max-width:145px}
 #leaderboard{font-size:10px;padding:5px 8px;min-width:140px}
 #leaderboard .lb-row .lb-name{max-width:80px}
@@ -72,6 +71,7 @@ button{cursor:pointer}
 <canvas id="game"></canvas>
 <canvas id="minimapCanvas" width="150" height="150"></canvas>
 
+<!-- HP бар перенесен в центр сверху -->
 <div id="ui">
 <div class="panel hpPanel">
 <div>❤️ HP: <span id="hpText">100</span></div>
@@ -112,7 +112,7 @@ button{cursor:pointer}
 <div id="dialog">
 <h1>MELSTROY: ПОБЕГ</h1>
 <p>Ты — Мелстрой в тазике. Интерпол наступает со всех сторон! Собирай шляпы, качай Котость, атакуй агентов!</p>
-<p>🎮 <b>Выбери режим:</b><br>Соло — волны врагов, прокачка, никаких ботов.<br>Мультиплеер — играй с друзьями и ботами.</p>
+<p>🎮 <b>Выбери режим:</b><br>Соло — волны врагов, прокачка, никаких ботов.<br>Мультиплеер — играй с друзьями.</p>
 <button class="btn-main" id="btnSolo">СОЛО (ВОЛНЫ)</button>
 <button class="btn-secondary" id="btnMulti">МУЛЬТИПЛЕЕР</button>
 </div>
@@ -205,7 +205,7 @@ function updateJoy(e){
   js.style.transform=`translate(${dx}px, ${dy}px)`;
 }
 canvas.addEventListener('pointerdown', e=>{
-  if(!mobile || e.clientX > vw/2) return; // только левая половина
+  if(!mobile || e.clientX > vw/2) return;
   if(joy.active) return;
   joy.active=true;joy.id=e.pointerId;joy.startX=e.clientX;joy.startY=e.clientY;
   jb.style.display='block';
@@ -300,60 +300,6 @@ function renderLeaderboard(){
 loadLeaderboard();
 renderLeaderboard();
 
-// ============ БОТЫ ============
-const BOT_NAMES = ['Мелстрой','Интерпол','Котость','Шляпа','Тазик','Мама Птица','Чекушка','Агент 007','Мёд','Буст','Беглец','Мелстрой228','Кот','Птица','Интерпол2'];
-function createBot(name){
-  const angle = Math.random()*Math.PI*2;
-  const r = 350 + Math.random()*300;
-  const px = game ? game.p.x : 0, py = game ? game.p.y : 0;
-  return {
-    x: px + Math.cos(angle)*r, y: py + Math.sin(angle)*r,
-    r: 20, hp: 30 + Math.floor(Math.random()*20), maxHp: 30 + Math.floor(Math.random()*20),
-    speed: 70 + Math.random()*30,
-    name: name || BOT_NAMES[Math.floor(Math.random()*BOT_NAMES.length)],
-    isBot: true, hit: 0, slow: 0,
-    color: `hsl(${Math.floor(Math.random()*360)},60%,50%)`,
-    score: 0, target: null, wanderAngle: Math.random()*Math.PI*2
-  };
-}
-let bots = [];
-function spawnBots(count){
-  bots = [];
-  for (let i=0;i<count;i++) bots.push(createBot(BOT_NAMES[i % BOT_NAMES.length]));
-}
-function updateBots(dt){
-  if (!game || game.mode === 'solo') return; // Боты только в мультиплеере
-  const g = game;
-  for (const bot of bots) {
-    if (bot.hp <= 0) continue;
-    let nearest = null, nearestDist = 9999;
-    for (const e of g.enemies) {
-      const d = Math.hypot(e.x - bot.x, e.y - bot.y);
-      if (d < nearestDist) { nearestDist = d; nearest = e; }
-    }
-    let dx = 0, dy = 0;
-    if (nearest && nearestDist < 400) { dx = bot.x - nearest.x; dy = bot.y - nearest.y; }
-    else { bot.wanderAngle += (Math.random()-0.5)*dt*3; dx = Math.cos(bot.wanderAngle); dy = Math.sin(bot.wanderAngle); }
-    const dToPlayer = Math.hypot(g.p.x - bot.x, g.p.y - bot.y);
-    if (dToPlayer < 200) { dx += (bot.x - g.p.x) * 0.02; dy += (bot.y - g.p.y) * 0.02; }
-    const len = Math.hypot(dx,dy) || 1;
-    bot.x += (dx/len) * bot.speed * dt;
-    bot.y += (dy/len) * bot.speed * dt;
-    if (nearest && nearestDist < 300 && Math.random() < 0.02) {
-      g.bullets.push({ x: bot.x, y: bot.y, vx: (nearest.x - bot.x)/nearestDist * 400, vy: (nearest.y - bot.y)/nearestDist * 400, t: 1.2, d: 2, c: bot.color, r: 5, fromBot: true });
-    }
-    for (const e of g.enemies) { if (Math.hypot(e.x - bot.x, e.y - bot.y) < e.r + bot.r) { bot.hp -= e.dmg * dt * 0.5; } }
-    if (bot.hp <= 0) {
-      bot.hp = 0;
-      setTimeout(()=>{
-        if (!game) return;
-        const newBot = createBot(bot.name);
-        bot.x = newBot.x; bot.y = newBot.y; bot.hp = newBot.maxHp; bot.maxHp = newBot.maxHp;
-      }, 4000);
-    }
-  }
-}
-
 // ============ ИГРОВАЯ ЛОГИКА ============
 let game=null,running=false,paused=false,last=0,raf=0;
 const rand=(a,b)=>a+Math.random()*(b-a),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -378,12 +324,10 @@ function startGame(mode){
   };
   
   if (mode === 'multi') {
-    spawnBots(5);
     initMultiplayer();
     $('leaderboard').style.display = 'block';
     $('playerList').style.display = 'flex';
   } else {
-    bots = []; // нет ботов в соло
     $('leaderboard').style.display = 'none';
     $('playerList').style.display = 'none';
     $('connStatus').style.display = 'none';
@@ -403,14 +347,12 @@ function startWave() {
   info.classList.add('show');
   setTimeout(()=>info.classList.remove('show'), 2000);
   
-  // Спавн врагов волны
   for (let i=0; i<game.waveEnemies; i++) {
     setTimeout(() => {
       if (running && game.mode === 'solo') spawnEnemy();
     }, i * 300);
   }
   
-  // Босс на каждой 3-й волне
   if (game.wave % 3 === 0) {
     setTimeout(() => {
       if (running && game.mode === 'solo') spawnBoss();
@@ -431,9 +373,8 @@ $('nickOk').addEventListener('click', ()=>{
   const nick = $('nickInput').value.trim() || 'Мелстрой'+Math.floor(Math.random()*1000);
   playerName = nick; localStorage.setItem('melstroy_nick', nick);
   $('nameInput').style.display='none';
-  // Возвращаем меню выбора
   $('overlay').classList.remove('hidden');
-  $('dialog').innerHTML = `<h1>MELSTROY: ПОБЕГ</h1><p>🎮 <b>Выбери режим:</b><br>Соло — волны врагов, прокачка.<br>Мультиплеер — играй с друзьями и ботами.</p><button class="btn-main" id="btnSolo">СОЛО (ВОЛНЫ)</button><button class="btn-secondary" id="btnMulti">МУЛЬТИПЛЕЕР</button>`;
+  $('dialog').innerHTML = `<h1>MELSTROY: ПОБЕГ</h1><p>🎮 <b>Выбери режим:</b><br>Соло — волны врагов, прокачка.<br>Мультиплеер — играй с друзьями.</p><button class="btn-main" id="btnSolo">СОЛО (ВОЛНЫ)</button><button class="btn-secondary" id="btnMulti">МУЛЬТИПЛЕЕР</button>`;
   $('btnSolo').addEventListener('click', ()=>startGame('solo'));
   $('btnMulti').addEventListener('click', ()=>startGame('multi'));
 });
@@ -449,9 +390,9 @@ $('pause').addEventListener('click',()=>{
 function spawnEnemy(){
   let p=game.p,ang=rand(0,Math.PI*2),r=rand(Math.max(vw,vh)*.55,Math.max(vw,vh)*.8);
   let types=[
-    {r:16,hp:3,spd:95,dmg:8,c:'#426b9a',score:1}, // Патруль
-    {r:20,hp:7,spd:72,dmg:12,c:'#315b91',score:2}, // Детектив
-    {r:25,hp:14,spd:55,dmg:17,c:'#9c333d',score:3} // Спецназ
+    {r:16,hp:3,spd:95,dmg:8,c:'#426b9a',score:1},
+    {r:20,hp:7,spd:72,dmg:12,c:'#315b91',score:2},
+    {r:25,hp:14,spd:55,dmg:17,c:'#9c333d',score:3}
   ];
   let t=types[0];
   if(game.level>=3&&Math.random()<.3)t=types[1];
@@ -474,7 +415,6 @@ function update(dt){
   const g=game,p=g.p;
   g.time+=dt;g.level=1+Math.floor(g.time/25);
   
-  // Движение
   let dx=0,dy=0;
   if(keys['w']||keys['arrowup']||keys['ц'])dy--;
   if(keys['s']||keys['arrowdown']||keys['ы'])dy++;
@@ -486,12 +426,10 @@ function update(dt){
   p.x+=dx*p.speed*dt*(p.rageOn?1.15:1)*boostMultiplier;
   p.y+=dy*p.speed*dt*(p.rageOn?1.15:1)*boostMultiplier;
   p.face=Math.atan2(dy,dx);p.inv=Math.max(0,p.inv-dt);p.boost=Math.max(0,p.boost-dt);
-  p.hatSpeed=Math.max(1, p.hatSpeed - dt*0.1); // Затухание скорости шляп
+  p.hatSpeed=Math.max(1, p.hatSpeed - dt*0.1);
 
-  // Камера
   g.cam.x+=(p.x-g.cam.x)*Math.min(1,dt*7);g.cam.y+=(p.y-g.cam.y)*Math.min(1,dt*7);
 
-  // Волны в соло-режиме
   if (g.mode === 'solo') {
     if (g.waveActive && g.enemies.length === 0 && g.bosses.length === 0) {
       g.waveActive = false;
@@ -510,7 +448,6 @@ function update(dt){
       }
     }
   } else {
-    // Обычный спавн в мультиплеере
     g.spawn-=dt;
     if(g.spawn<=0){
       g.spawn=Math.max(.24,1.25-g.level*.065);spawnEnemy();
@@ -520,7 +457,6 @@ function update(dt){
     }
   }
 
-  // Оружие
   for(let w of g.weapons){
     if(w.type==='hat'){
       w.a+=dt*2.8*p.hatSpeed;
@@ -536,7 +472,6 @@ function update(dt){
     }
   }
 
-  // Котость
   if(g.cat){
     let c=g.cat;
     c.x+=(p.x-55-c.x)*Math.min(1,dt*4);
@@ -549,7 +484,6 @@ function update(dt){
     }
   }
 
-  // Пули
   for(let i=g.bullets.length-1;i>=0;i--){
     let b=g.bullets[i];
     b.x+=b.vx*dt;b.y+=b.vy*dt;b.t-=dt;
@@ -562,7 +496,6 @@ function update(dt){
     if(hit||b.t<=0)g.bullets.splice(i,1)
   }
 
-  // Враги
   for(let i=g.enemies.length-1;i>=0;i--){
     let e=g.enemies[i],d=dist(e,p)||1;
     e.x+=(p.x-e.x)/d*e.spd*dt*(e.slow?0.5:1);
@@ -582,7 +515,6 @@ function update(dt){
     }
   }
 
-  // Боссы
   for(let i=g.bosses.length-1;i>=0;i--){
     let b=g.bosses[i],d=dist(b,p)||1;
     b.x+=(p.x-b.x)/d*b.spd*dt;
@@ -590,7 +522,6 @@ function update(dt){
     b.hit=Math.max(0,b.hit-dt);
     b.shootCd -= dt;
     
-    // Босс стреляет
     if (b.shootCd <= 0 && d < 500) {
       b.shootCd = 1.5;
       let a = Math.atan2(p.y-b.y, p.x-b.x);
@@ -612,14 +543,12 @@ function update(dt){
     }
   }
 
-  // Подбор предметов
   for(let i=g.pickups.length-1;i>=0;i--){
     let q=g.pickups[i];q.t-=dt;q.phase+=dt*4;
     if(q.t<=0){g.pickups.splice(i,1);continue}
     if(dist(q,p)<p.r+22){collect(q);g.pickups.splice(i,1)}
   }
   
-  // Частицы и текст
   for(let a of [g.particles,g.texts]){
     for(let i=a.length-1;i>=0;i--){
       let z=a[i];z.t-=dt;
@@ -632,7 +561,6 @@ function update(dt){
   
   syncState(performance.now());
   cleanupRemote();
-  updateBots(dt);
 
   if(p.hp<=0){p.hp=0;running=false;gameOver()}
   updateUI();
@@ -676,10 +604,6 @@ function updatePlayerList(){
   const el = $('playerList');
   if (!game) { el.innerHTML = ''; return; }
   let html = `<div class="pl-item me"><span class="pl-dot"></span><span>${playerName} (вы)</span><span class="pl-hp"><span class="pl-hp-fill" style="width:${Math.max(0,game.p.hp/game.p.maxHp*100)}%;background:#e22"></span></span></div>`;
-  for (const bot of bots) {
-    if (bot.hp <= 0) continue;
-    html += `<div class="pl-item bot"><span class="pl-dot"></span><span>${bot.name}</span><span class="pl-hp"><span class="pl-hp-fill" style="width:${Math.max(0,bot.hp/bot.maxHp*100)}%;background:#ff9800"></span></span></div>`;
-  }
   for (const [id, rp] of remotePlayers) {
     html += `<div class="pl-item"><span class="pl-dot"></span><span>${rp.name}</span><span class="pl-hp"><span class="pl-hp-fill" style="width:${Math.max(0,rp.hp/100*100)}%"></span></span></div>`;
   }
@@ -692,7 +616,6 @@ function drawMinimap() {
   const w = 150, h = 150, cx = w/2, cy = h/2, r = 65;
   mmCtx.clearRect(0, 0, w, h);
   
-  // Фон карты
   mmCtx.fillStyle = '#111';
   mmCtx.beginPath(); mmCtx.arc(cx, cy, r+3, 0, Math.PI*2); mmCtx.fill();
   mmCtx.fillStyle = '#222';
@@ -701,10 +624,9 @@ function drawMinimap() {
   mmCtx.lineWidth = 1;
   mmCtx.stroke();
 
-  const scale = 0.15; // Масштаб карты
+  const scale = 0.15;
   const p = game.p;
   
-  // Враги (маленькие белые точки)
   mmCtx.fillStyle = '#888';
   for (const e of game.enemies) {
     const dx = (e.x - p.x) * scale;
@@ -714,7 +636,6 @@ function drawMinimap() {
     }
   }
   
-  // Боссы (красные точки)
   mmCtx.fillStyle = '#f00';
   for (const b of game.bosses) {
     const dx = (b.x - p.x) * scale;
@@ -724,7 +645,6 @@ function drawMinimap() {
     }
   }
   
-  // Другие игроки (синие точки)
   mmCtx.fillStyle = '#4af';
   for (const [id, rp] of remotePlayers) {
     const dx = (rp.x - p.x) * scale;
@@ -733,19 +653,7 @@ function drawMinimap() {
       mmCtx.beginPath(); mmCtx.arc(cx + dx, cy + dy, 3, 0, Math.PI*2); mmCtx.fill();
     }
   }
-  
-  // Боты (оранжевые точки)
-  mmCtx.fillStyle = '#fa0';
-  for (const bot of bots) {
-    if (bot.hp <= 0) continue;
-    const dx = (bot.x - p.x) * scale;
-    const dy = (bot.y - p.y) * scale;
-    if (Math.hypot(dx, dy) < r) {
-      mmCtx.beginPath(); mmCtx.arc(cx + dx, cy + dy, 2, 0, Math.PI*2); mmCtx.fill();
-    }
-  }
 
-  // Игрок (жёлтая точка в центре со стрелкой направления)
   mmCtx.fillStyle = '#ffe66b';
   mmCtx.beginPath(); mmCtx.arc(cx, cy, 3, 0, Math.PI*2); mmCtx.fill();
   const face = game.p.face || 0;
@@ -762,7 +670,6 @@ function draw(){
   if(shake)ctx.translate(rand(-shake,shake),rand(-shake,shake));
   ctx.translate(vw/2-g.cam.x,vh/2-g.cam.y);
   
-  // Пол
   let left=g.cam.x-vw/2-100,right=g.cam.x+vw/2+100,top=g.cam.y-vh/2-100,bottom=g.cam.y+vh/2+100;
   ctx.fillStyle='#24212b';ctx.fillRect(left,top,right-left,bottom-top);
   ctx.strokeStyle='#302c37';ctx.lineWidth=1;
@@ -775,7 +682,6 @@ function draw(){
       ctx.fillStyle='#39343c';ctx.fillRect(x,y,24,15);ctx.fillStyle='#4a4145';ctx.fillRect(x+4,y+3,13,8)
     }
 
-  // Предметы
   const icons={chekushka:'🍾',cat:'🐈',mamaBird:'🐦',speed:'⚡',heal:'❤️',shield:'🛡️',xp:'⭐',fan:'🌀'};
   for(let q of g.pickups){
     ctx.save();ctx.translate(q.x,q.y+Math.sin(q.phase)*5);
@@ -785,7 +691,6 @@ function draw(){
     ctx.restore()
   }
 
-  // Шляпы
   for(let w of g.weapons){
     if(w.type==='hat'){
       const count=Math.min(30,w.count),radius=155+Math.min(65,count*3);
@@ -799,98 +704,61 @@ function draw(){
     }
   }
 
-  // Птицы
   for(let i=0;i<g.birds;i++){
     let a=g.time*2+i*Math.PI*2/Math.max(1,g.birds);
     ctx.font='19px Arial';ctx.fillText('🐦',p.x+Math.cos(a)*43,p.y+Math.sin(a)*43)
   }
-  
-  // Пули
   for(let b of g.bullets){
     ctx.fillStyle=b.c;ctx.shadowColor=b.c;ctx.shadowBlur=12;
     ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0
   }
-
-  // Враги (Полицейские)
   for(let e of g.enemies){
     ctx.save();ctx.translate(e.x,e.y);
-    // Тело (форма)
-    ctx.fillStyle='#1a1f2e'; // Темно-синяя форма
+    ctx.fillStyle='#1a1f2e';
     ctx.fillRect(-e.r*.65, -e.r*.2, e.r*1.3, e.r*1.2);
-    // Руки
     ctx.fillStyle='#1a1f2e';
     ctx.fillRect(-e.r*.9, -e.r*.2, e.r*.25, e.r*.8);
     ctx.fillRect(e.r*.65, -e.r*.2, e.r*.25, e.r*.8);
-    // Голова
     ctx.fillStyle='#e8b18e';
     ctx.beginPath();ctx.arc(0,-e.r*.5,e.r*.5,0,Math.PI*2);ctx.fill();
-    // Фуражка
-    ctx.fillStyle='#111'; // Черная фуражка
+    ctx.fillStyle='#111';
     ctx.beginPath();ctx.arc(0,-e.r*.7,e.r*.55,Math.PI,0);ctx.fill();
     ctx.fillRect(-e.r*.55, -e.r*.7, e.r*1.1, e.r*.2);
-    // Кокарда
     ctx.fillStyle='#ff0';
     ctx.beginPath();ctx.arc(0,-e.r*.6,e.r*.1,0,Math.PI*2);ctx.fill();
-    // Жезл/Дубинка (визуально)
     ctx.fillStyle='#555';
     ctx.fillRect(e.r*.4, e.r*.1, 2, e.r*.6);
     
-    // HP Bar
     ctx.fillStyle='#300';ctx.fillRect(-e.r,-e.r*1.4,e.r*2,4);
     ctx.fillStyle='#e33';ctx.fillRect(-e.r,-e.r*1.4,e.r*2*Math.max(0,e.hp/e.maxHp),4);
     ctx.restore()
   }
 
-  // Боссы (Спецназ)
   for(let b of g.bosses){
     ctx.save();ctx.translate(b.x,b.y);
-    // Тень
     ctx.fillStyle='#000a';ctx.beginPath();ctx.ellipse(0,15,b.r*1.1,b.r*.6,0,0,Math.PI*2);ctx.fill();
-    // Тяжелая броня
-    ctx.fillStyle='#0a0a0a'; // Черный спецназ
+    ctx.fillStyle='#0a0a0a';
     ctx.fillRect(-b.r*.7, -b.r*.2, b.r*1.4, b.r*1.4);
-    // Бронежилет
     ctx.fillStyle='#333';
     ctx.fillRect(-b.r*.5, -b.r*.1, b.r*1.0, b.r*.9);
-    // Голова (шлем)
     ctx.fillStyle='#222';
     ctx.beginPath();ctx.arc(0,-b.r*.6,b.r*.55,0,Math.PI*2);ctx.fill();
-    // Маска-балаклава
     ctx.fillStyle='#111';
     ctx.fillRect(-b.r*.4, -b.r*.7, b.r*.8, b.r*.3);
-    // Красные глаза
     ctx.fillStyle='#f00';
     ctx.beginPath();ctx.arc(-b.r*.2,-b.r*.6,b.r*.08,0,Math.PI*2);ctx.fill();
     ctx.beginPath();ctx.arc(b.r*.2,-b.r*.6,b.r*.08,0,Math.PI*2);ctx.fill();
-    // Оружие (автомат)
     ctx.fillStyle='#555';
     ctx.fillRect(b.r*.4, -b.r*.1, b.r*.6, b.r*.15);
     ctx.fillRect(b.r*.8, -b.r*.2, b.r*.1, b.r*.3);
     
-    // HP Bar (большой)
     ctx.fillStyle='#300';ctx.fillRect(-b.r,-b.r*1.8,b.r*2,6);
     ctx.fillStyle='#f22';ctx.fillRect(-b.r,-b.r*1.8,b.r*2*Math.max(0,b.hp/b.maxHp),6);
-    // Иконка "БОСС"
     ctx.fillStyle='#f22';ctx.font='bold 10px Arial';ctx.textAlign='center';
     ctx.fillText('СПЕЦНАЗ', 0, -b.r*1.9);
     ctx.restore()
   }
 
-  // Боты
-  if (game.mode === 'multi') {
-    for (const bot of bots) {
-      if (bot.hp <= 0) continue;
-      ctx.save();ctx.translate(bot.x, bot.y);
-      ctx.fillStyle='#09080d99';ctx.beginPath();ctx.ellipse(0,13,24,10,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle=bot.color;ctx.beginPath();ctx.ellipse(0,5,22,14,0,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#e8b18e';ctx.beginPath();ctx.arc(0,-12,12,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#fff';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText(bot.name, 0, -34);
-      ctx.fillStyle='#300';ctx.fillRect(-20,-24,40,4);ctx.fillStyle='#4caf50';ctx.fillRect(-20,-24,40*Math.max(0,bot.hp/bot.maxHp),4);
-      ctx.restore();
-    }
-  }
-
-  // Другие игроки
   if (game.mode === 'multi') {
     for (const [id, rp] of remotePlayers) {
       if (!game) continue;
@@ -904,7 +772,6 @@ function draw(){
     }
   }
 
-  // Котость
   if(g.cat){
     ctx.save();ctx.translate(g.cat.x,g.cat.y);
     if(catSprite.complete&&catSprite.naturalWidth)ctx.drawImage(catSprite,-31,-34,62,68);
@@ -914,7 +781,6 @@ function draw(){
     ctx.fillText('КОТОСТЬ LVL '+g.cat.level,g.cat.x,g.cat.y-40)
   }
 
-  // Игрок
   ctx.save();ctx.translate(p.x,p.y);
   ctx.fillStyle='#09080d99';ctx.beginPath();ctx.ellipse(0,13,27,12,0,0,Math.PI*2);ctx.fill();
   let bob=Math.sin(g.time*9)*2;
@@ -931,7 +797,6 @@ function draw(){
   ctx.globalAlpha=1;ctx.font='bold 12px Arial';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(playerName, 0, -52);
   ctx.restore();ctx.globalAlpha=1;
 
-  // Частицы и текст
   for(let z of g.particles){ctx.globalAlpha=Math.max(0,z.t/.65);ctx.fillStyle=z.c;ctx.beginPath();ctx.arc(z.x,z.y,3,0,Math.PI*2);ctx.fill()}
   ctx.globalAlpha=1;
   for(let z of g.texts){ctx.globalAlpha=Math.max(0,z.t);ctx.fillStyle=z.c;ctx.font='bold 16px Arial';ctx.textAlign='center';ctx.fillText(z.s,z.x,z.y)}
@@ -959,4 +824,4 @@ function loop(t){
 });
 </script>
 </body>
-  </html>
+</html>
